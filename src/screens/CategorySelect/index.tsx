@@ -51,7 +51,7 @@ export function CategorySelect({
                 onPress={() => handleCategorySelect(item)}
                 isActive ={ category.key === item.key}
                 >
-                    <Icon name ={item.icon} />
+                    <Icon name={item.icon} />
                     <Name>{item.name}</Name>
                 </Category>
             )}

@@ -1,6 +1,7 @@
 import styled from "styled-components/native";
 import { RFPercentage, RFValue } from "react-native-responsive-fontsize"
 import { Feather } from '@expo/vector-icons';
+import {BorderlessButton} from 'react-native-gesture-handler';
 
 import { DataListProps } from '.';
 import { FlatList, FlatListProps } from "react-native";
@@ -56,10 +57,13 @@ export const UserWrapper = styled.View`
     margin-top: ${RFValue(38)}px;
 `;
 
+export const LogoutButton = styled(BorderlessButton)``;
+
 export const Icon = styled(Feather)`
 color: ${({ theme }) => theme.colors.secondary};
 font-size: ${RFValue(24)}px;
 `;
+
 
 export const HighlightCards = styled.ScrollView.attrs({
     horizontal:true,
