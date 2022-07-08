@@ -12,6 +12,7 @@
     "@expo-google-fonts/poppins": "^0.2.2",
     "@expo-google-fonts/roboto": "^0.2.2",
     "@hookform/resolvers": "^2.9.3",
+    "@react-native-async-storage/async-storage": "~1.15.0",
     "@react-navigation/bottom-tabs": "^6.3.1",
     "@react-navigation/native": "^6.0.10",
     "expo": "~44.0.2",
@@ -28,6 +29,7 @@
     "react-native-responsive-fontsize": "^0.5.1",
     "react-native-safe-area-context": "3.3.2",
     "react-native-screens": "~3.10.1",
+    "react-native-uuid": "^2.0.1",
     "react-native-web": "0.17.1",
     "styled-components": "^5.3.3",
     "yup": "^0.32.11"
