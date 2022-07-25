@@ -1,6 +1,8 @@
-import React from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { HighlightCard } from "../../components/HighlightCard";
 import { TransactionCard, TransactionCardProps } from "../../components/TransactionCard";
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { ActivityIndicator } from "react-native";
 
 import {
     Container,
@@ -18,102 +20,188 @@ import {
     TransactionList,
     LogoutButton
 } from "./styles";
+import { useFocusEffect } from "@react-navigation/native";
 
 export interface DataListProps extends TransactionCardProps {
     id: string;
 }
 
+interface HighlightProps {
+    amount: string;
+}
+
+interface HighlightData {
+    entries: HighlightProps;
+    expensives: HighlightProps;
+    total: HighlightProps;
+}
+
 
 export function Dashboard() {
-    const data: DataListProps[] = [
-        {
-            id: '1',
-            type: 'positive',
-            title: "Desenvolvimento de site",
-            amount: "R$12.000,00",
-            category: {
-                name: 'Vendas',
-                icon: 'dollar-sign'
+    const [transactions, setTransactions] = useState<DataListProps[]>([]);
+    const [lastIncome, setLastIncome] = useState<DataListProps>({} as DataListProps);
+    const [lastOutcome, setLastOutcome] = useState<DataListProps>({} as DataListProps);
+    const [highlightData, setHighlightData] = useState<HighlightData>({} as HighlightData);
+    const [isLoading, setLoading] = useState(true);
+
+    async function loadTransactions() {
+        const dataKey = '@meumoney:transactions';
+        const res = await AsyncStorage.getItem(dataKey);
+        const transactions = res ? JSON.parse(res) : [];
+
+        let totalEntries = 0;
+        let totalExpensives = 0;
+
+        const formattedTransactions: DataListProps[] = transactions
+            .map((item: DataListProps) => {
+                if (item.type === 'positive') {
+                    totalEntries += Number(item.amount)
+                } else {
+                    totalExpensives += Number(item.amount)
+                }
+                const amount = Number(item.amount)
+                    .toLocaleString('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL'
+                    });
+
+                return {
+                    id: item.id,
+                    name: item.name,
+                    amount,
+                    type: item.type,
+                    category: item.category,
+                    date: item.date,
+                }
+            });
+        setTransactions(formattedTransactions);
+
+        setLastIncome(transactions
+            .filter((transaction: DataListProps) => transaction.type === 'positive')
+            .slice(-1)[0])
+
+        setLastOutcome(transactions
+            .filter((transaction: DataListProps) => transaction.type === 'negative')
+            .slice(-1)[0])
+
+        const total = totalEntries - totalExpensives;
+        setHighlightData({
+            entries: {
+                amount: totalEntries.toLocaleString('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL'
+                })
             },
-            date: "24/02/2022"
-        },
-        {
-            id: '2',
-            type: 'negative',
-            title: "Hamburguewr Pizzy",
-            amount: "R$59,00",
-            category: {
-                name: 'Alimentação',
-                icon: 'coffee'
+            expensives: {
+                amount: totalExpensives.toLocaleString('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL'
+                })
             },
-            date: "24/02/2022"
-        },
-        {
-            id: '3',
-            type: 'negative',
-            title: "Aluguel do apartamento",
-            amount: "R$1.200,00",
-            category: {
-                name: 'Casa',
-                icon: 'home'
+            total: {
+                amount: total.toLocaleString('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL'
+                })
             },
-            date: "24/02/2022"
-        }
-    ];
+        })
+        setLoading(false);
+    }
+
+    useEffect(() => {
+        loadTransactions();
+    }, []);
+
+    useFocusEffect(useCallback(() => {
+        loadTransactions();
+    }, []));
 
     return (
-        <Container>
-            <Header>
+        <>
+            {
+                isLoading ?
+                    <ActivityIndicator />
+                    :
+                    <Container>
+                        <Header>
 
-                <UserWrapper>
-                    <UserInfo>
-                        <Photo source={{ uri: 'https://github.com/mviniciusgo94.png' }} />
-                        <User>
-                            <UserGreeting>Olá, </UserGreeting>
-                            <UserName>Marcus Vinícius</UserName>
-                        </User>
-                    </UserInfo>
-                    <LogoutButton onPress={() => { }}>
-                        <Icon name="power" />
-                    </LogoutButton>
+                            <UserWrapper>
+                                <UserInfo>
+                                    <Photo source={{ uri: 'https://github.com/mviniciusgo94.png' }} />
+                                    <User>
+                                        <UserGreeting>Olá, </UserGreeting>
+                                        <UserName>Marcus Vinícius</UserName>
+                                    </User>
+                                </UserInfo>
+                                <LogoutButton onPress={() => { }}>
+                                    <Icon name="power" />
+                                </LogoutButton>
 
-                </UserWrapper>
-            </Header>
+                            </UserWrapper>
+                        </Header>
 
-            <HighlightCards
+                        <HighlightCards>
 
-            >
-                <HighlightCard
-                    type="up"
-                    title="Entradas"
-                    amount="R$ 17.400,00"
-                    lastTransaction="Última entrada dia 22 de Fevereiro" />
-                <HighlightCard
-                    type="down"
-                    title="Saídas"
-                    amount="R$ 17.400,00"
-                    lastTransaction="Última saída dia 22 de Fevereiro" />
-                <HighlightCard
-                    type="total"
-                    title="Total"
-                    amount="R$ 17.400,00"
-                    lastTransaction="Valor atual" />
-            </HighlightCards>
 
-            <Transactions>
-                <Title>
-                    Listagem
-                </Title>
+                            {lastIncome && <HighlightCard
+                                type="up"
+                                title="Entradas"
+                                amount={
+                                    Number(lastIncome?.amount)
+                                        .toLocaleString('pt-BR', {
+                                            style: 'currency',
+                                            currency: 'BRL'
+                                        })
+                                }
+                                lastTransaction={
+                                    `Última entrada dia ${Intl.DateTimeFormat('pt-BR', {
+                                        day: '2-digit',
+                                        month: 'long',
+                                    }).format(new Date(lastIncome.date))}`} />}
 
-                <TransactionList
-                    data={data}
-                    keyExtractor={item => item.id}
-                    renderItem={({ item }) => <TransactionCard data={item} />}
-                />
+                            {lastOutcome && <HighlightCard
+                                type="down"
+                                title="Saídas"
+                                amount={
+                                    Number(lastOutcome?.amount)
+                                        .toLocaleString('pt-BR', {
+                                            style: 'currency',
+                                            currency: 'BRL'
+                                        })
+                                }
+                                lastTransaction={
+                                    `Última saída dia ${Intl.DateTimeFormat('pt-BR', {
+                                        day: '2-digit',
+                                        month: 'long',
+                                    }).format(new Date(lastOutcome.date))}`} />}
 
-            </Transactions>
+                            {lastIncome && lastOutcome && <HighlightCard
+                                type="total"
+                                title="Total"
+                                amount={highlightData.total.amount}
+                                lastTransaction={
+                                    `De 01 a ${Intl.DateTimeFormat('pt-BR', {
+                                        day: '2-digit',
+                                        month: 'long',
+                                    }).format(new Date(lastOutcome.date))}`} />}
+                        </HighlightCards>
 
-        </Container>
+                        <Transactions>
+                            <Title>
+                                Listagem
+                            </Title>
+
+                            <TransactionList
+                                data={transactions}
+                                keyExtractor={item => item.id}
+                                renderItem={({ item }) => <TransactionCard data={item} />}
+                            />
+
+                        </Transactions>
+
+                    </Container>
+            }
+        </>
     )
 
 }
