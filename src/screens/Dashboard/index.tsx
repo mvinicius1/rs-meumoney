@@ -108,9 +108,9 @@ export function Dashboard() {
         setLoading(false);
     }
 
-    useEffect(() => {
+/*     useEffect(() => {
         loadTransactions();
-    }, []);
+    }, []); */
 
     useFocusEffect(useCallback(() => {
         loadTransactions();
